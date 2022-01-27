@@ -1,0 +1,165 @@
+﻿
+<body class="flex">
+<div class="main">
+      <div class="title">
+        <h1 class="caption">Dice Breaker</h1>
+      </div>
+      <EditForm Model="inp">
+        <div class="content">
+          <div class="row">
+              <label>
+                  How Many Sides (@inp.Sides)?&nbsp&nbsp
+                  <InputSelect id="sides" @bind-Value="inp.Sides">
+                      @foreach(var num in inp.diceOptions)
+                            {
+                              <option value="@num">@num</option>
+                            }
+                  </InputSelect>
+              </label>
+            </div>
+          <div class="row">
+              <label>
+                  How Many Dice (@inp.Quan)?&nbsp&nbsp
+                  <InputNumber @bind-Value="inp.Quan" />
+              </label>
+          </div>
+          <div class="row">
+            <label>
+                  Should I Highlight Successes (@inp.Successes)?&nbsp&nbsp
+                  <InputCheckbox @bind-Value="inp.Successes" />
+             </label>      
+          </div>
+          <div class="row">
+          <label>
+                  Should I Re-roll High Rolls (@inp.Explode)?&nbsp&nbsp
+                  <InputCheckbox @bind-Value="inp.Explode" />
+              </label>       
+          </div>
+          <div class="row">
+            <label>
+                  Should I Combine All Rolls Into One Result (@inp.Combine)?&nbsp&nbsp
+                  <InputCheckbox @bind-Value="inp.Combine" />
+              </label>       
+          </div>
+      </div>
+          <div class="footer">
+            <div>
+                <InputTextArea @bind-Value="inp.Result" />
+              </div>
+            <span class="footer-cell">
+                <input class="button" type="button" name="submit" id="button" value="Submit" @onclick="@CreateDiceOutput"><br>
+                <input class="button" type="button" name="refresh" id="refresh" value="Reset All" @onclick="@ResetAll">
+            </span>
+          </div>
+        </EditForm>
+  </div>
+
+</body>
+
+@code{
+
+    public class Inputs
+    {
+        public List<int> diceOptions = new List<int> {4, 6, 8, 10, 12, 20};
+        public int Sides { get; set; } = 4;
+        public int Quan { get; set; } = 1;
+        public bool Successes { get; set; } = false;
+        public bool Explode { get; set; } = false;
+        public bool Combine { get; set; } = false;
+        public string Result { get; set; } = "Roll results appear here.";        
+    }
+
+    Inputs inp = new Inputs();
+    List<int> diceList = new List<int>();
+    List<int> highlightList = new List<int>();
+    int highlightLength = 0;
+
+    //This function outputs a list of dice rolls based on the input of sides and quantity
+    public List<int> RollDice(int sides, int quan)
+    {
+        Random rnd = new Random();
+        List<int> dice = new List<int>();
+        for (int i = 0; i < quan; i++)
+        {
+            dice.Add(rnd.Next(1, sides + 1));
+        }
+        return dice;
+    }
+
+    public void CreateDiceOutput()
+    {
+        if (inp.Explode == true)
+    {
+    diceList = RollDice(inp.Sides, inp.Quan);
+    List<int> high = diceList.FindAll(x => x == inp.Sides);
+    int highRoll = high.Count();
+    List<int> e = RollDice(inp.Sides, highRoll);
+    diceList.AddRange(e);
+    }
+    else
+    {
+    diceList = RollDice(inp.Sides, inp.Quan);
+    }
+
+    if(inp.Successes == true)
+    {
+        if(inp.Sides == 10)
+        {
+    List<int> x = diceList.FindAll(n => n >= 8);
+    highlightList.AddRange(x);
+        }
+        else if (inp.Sides == 20)
+        {
+    List<int> x = diceList.FindAll(n => n == 20);
+    highlightList.AddRange(x);
+        }
+        else
+        {
+    Console.WriteLine("Invalid Type!");
+        }
+        highlightLength = highlightList.Count;
+
+    }
+
+    if (inp.Combine == true)
+    {
+        int diceSum = 0;
+        foreach(int dice in diceList)
+        {
+    diceSum += dice;
+        }
+    diceList.Clear();
+    diceList.Add(diceSum);
+    }
+
+string output = String.Join(", ", diceList);
+
+if(inp.Successes == true)
+{
+    inp.Result = $"Results: {output} | Total Rolled: {diceList.Count} | Successes: {highlightLength}";
+}
+else
+{
+    inp.Result = $"Results: {output}";
+}
+
+        
+    }
+
+public void ResetAll()
+{
+    inp.Sides = 4;
+    inp.Quan = 1;
+    inp.Successes = false;
+    inp.Explode = false;
+    inp.Combine = false;
+    inp.Result = "Roll results appear here.";
+    diceList.Clear();
+    highlightList.Clear();
+    highlightLength = 0;
+
+}
+
+    
+
+}
